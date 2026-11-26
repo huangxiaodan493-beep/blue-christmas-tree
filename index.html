@@ -1,0 +1,2895 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#06040b" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+    <title>MERRY CHRISTMAS — Blue Gradient Particle Tree</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Space Mono", monospace;
+        background: #06040b;
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 42%, #1b0b18 0%, #06040b 56%, #020106 100%);
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        color: #fff6f9;
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 45%, transparent 24%, rgba(2, 1, 6, 0.1) 58%, rgba(2, 1, 6, 0.82) 100%);
+      }
+
+      .brand {
+        position: fixed;
+        top: clamp(22px, 4vw, 54px);
+        left: clamp(22px, 4.5vw, 72px);
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: clamp(9px, 0.78vw, 12px);
+        font-weight: 600;
+        letter-spacing: 0.34em;
+        color: rgba(255, 232, 240, 0.58);
+      }
+
+      h1 {
+        margin: 12px 0 0;
+        font-family: "Space Mono", monospace;
+        font-size: clamp(30px, 4.2vw, 70px);
+        font-weight: 400;
+        line-height: 0.92;
+        letter-spacing: -0.045em;
+        text-shadow: 0 0 42px rgba(255, 107, 144, 0.22);
+      }
+
+      h1 em { color: #ffb6c8; font-weight: 400; }
+
+      .hint,
+      .index {
+        position: fixed;
+        bottom: clamp(20px, 3.5vw, 44px);
+        margin: 0;
+        pointer-events: none;
+      }
+
+      .hint {
+        left: clamp(22px, 4.5vw, 72px);
+        bottom: clamp(70px, 7vw, 92px);
+        white-space: nowrap;
+        font-size: clamp(8px, 0.65vw, 10px);
+        letter-spacing: 0.32em;
+        color: rgba(255, 232, 240, 0.42);
+      }
+
+      .index {
+        right: clamp(22px, 4.5vw, 72px);
+        font-family: "Space Mono", monospace;
+        font-size: clamp(11px, 0.9vw, 15px);
+        color: rgba(255, 232, 240, 0.5);
+      }
+
+      .gesture-debug {
+        position: absolute;
+        top: clamp(20px, 3vw, 42px);
+        right: clamp(20px, 3vw, 44px);
+        z-index: 9;
+        width: min(286px, calc(100vw - 40px));
+        padding: 16px;
+        border: 1px solid rgba(255, 232, 240, 0.14);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(20, 11, 20, 0.86), rgba(6, 4, 11, 0.76));
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.045);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        user-select: none;
+      }
+
+      .gesture-debug__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .gesture-debug__kicker,
+      .gesture-debug__label {
+        margin: 0;
+        font-size: 8px;
+        font-weight: 600;
+        line-height: 1.4;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 232, 240, 0.42);
+      }
+
+      .gesture-debug__title {
+        margin: 4px 0 0;
+        font-family: "Space Mono", monospace;
+        font-size: 19px;
+        font-weight: 400;
+        letter-spacing: -0.02em;
+        color: #fff5f8;
+      }
+
+      .camera-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        margin-top: 2px;
+        font-size: 8px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        color: rgba(255, 232, 240, 0.68);
+      }
+
+      .camera-state__dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #746c78;
+        box-shadow: 0 0 0 rgba(116, 108, 120, 0);
+        transition: background 180ms ease, box-shadow 180ms ease;
+      }
+
+      .camera-state[data-state="loading"] .camera-state__dot {
+        background: #fbc96b;
+        box-shadow: 0 0 11px rgba(251, 201, 107, 0.8);
+        animation: camera-pulse 1.1s ease-in-out infinite;
+      }
+
+      .camera-state[data-state="ready"] .camera-state__dot {
+        background: #6ef2a4;
+        box-shadow: 0 0 11px rgba(110, 242, 164, 0.7);
+      }
+
+      @keyframes camera-pulse {
+        50% { opacity: 0.42; transform: scale(0.72); }
+      }
+
+      .gesture-debug__stats {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: 8px;
+      }
+
+      .gesture-debug__stat {
+        min-height: 66px;
+        padding: 10px 11px;
+        border: 1px solid rgba(255, 232, 240, 0.08);
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .gesture-debug__count {
+        margin-top: 7px;
+        font-family: "Space Mono", monospace;
+        font-size: 27px;
+        line-height: 1;
+        color: #fff5f8;
+      }
+
+      .gesture-debug__gesture {
+        margin-top: 4px;
+        font-size: 21px;
+        font-weight: 500;
+        line-height: 1.15;
+        letter-spacing: 0.015em;
+        color: #8a828e;
+        transition: color 160ms ease, text-shadow 160ms ease;
+      }
+
+      .gesture-debug__gesture[data-gesture="OPEN"] {
+        color: #73f3a7;
+        text-shadow: 0 0 20px rgba(80, 244, 145, 0.42);
+      }
+
+      .gesture-debug__gesture[data-gesture="CLOSED"] {
+        color: #ff6b7b;
+        text-shadow: 0 0 20px rgba(255, 66, 94, 0.38);
+      }
+
+      .gesture-debug__gesture[data-gesture="NO_HAND"] {
+        color: #8a828e;
+        text-shadow: none;
+      }
+
+      .gesture-debug__meter {
+        height: 2px;
+        margin-top: 10px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: rgba(255, 232, 240, 0.09);
+      }
+
+      .gesture-debug__meter-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #df0041, #fbc96b);
+        box-shadow: 0 0 10px rgba(251, 201, 107, 0.45);
+        transition: width 80ms linear;
+      }
+
+      .gesture-debug__distance {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 7px 0 0;
+        font-family: "Space Mono", monospace;
+        font-size: 8px;
+        letter-spacing: 0.04em;
+        color: rgba(255, 232, 240, 0.34);
+      }
+
+      .enable-camera {
+        width: 100%;
+        margin-top: 13px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255, 182, 200, 0.3);
+        border-radius: 8px;
+        background: rgba(255, 107, 144, 0.1);
+        color: #ffe9ef;
+        font: inherit;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+      }
+
+      .enable-camera:hover:not(:disabled) {
+        border-color: rgba(255, 182, 200, 0.58);
+        background: rgba(255, 107, 144, 0.2);
+      }
+
+      .enable-camera:disabled {
+        cursor: wait;
+        opacity: 0.54;
+      }
+
+      .gesture-debug__message {
+        min-height: 12px;
+        margin: 8px 0 0;
+        font-size: 8px;
+        line-height: 1.45;
+        letter-spacing: 0.03em;
+        color: rgba(255, 142, 158, 0.86);
+      }
+
+      .gesture-video {
+        position: fixed;
+        left: -2px;
+        bottom: -2px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .audio-controls {
+        position: fixed;
+        left: clamp(22px, 4.5vw, 72px);
+        bottom: clamp(20px, 3.5vw, 44px);
+        z-index: 8;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 159, 181, 0.16);
+        border-radius: 999px;
+        background: rgba(8, 5, 11, 0.52);
+        box-shadow:
+          0 10px 28px rgba(0, 0, 0, 0.22),
+          inset 0 1px rgba(255, 255, 255, 0.025);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .audio-volume {
+        width: 92px;
+        height: 12px;
+        margin: 0;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        accent-color: #ff9fb5;
+      }
+
+      .audio-volume::-webkit-slider-runnable-track {
+        height: 1px;
+        border-radius: 999px;
+        background: rgba(255, 232, 240, 0.22);
+      }
+
+      .audio-volume::-webkit-slider-thumb {
+        width: 8px;
+        height: 8px;
+        margin-top: -3.5px;
+        appearance: none;
+        border-radius: 50%;
+        background: #ffb6c8;
+        box-shadow: 0 0 9px rgba(255, 159, 181, 0.72);
+      }
+
+      .audio-volume::-moz-range-track {
+        height: 1px;
+        border-radius: 999px;
+        background: rgba(255, 232, 240, 0.22);
+      }
+
+      .audio-volume::-moz-range-thumb {
+        width: 8px;
+        height: 8px;
+        border: 0;
+        border-radius: 50%;
+        background: #ffb6c8;
+        box-shadow: 0 0 9px rgba(255, 159, 181, 0.72);
+      }
+
+      .audio-mute {
+        padding: 2px 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: rgba(255, 218, 229, 0.64);
+        font: inherit;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color 180ms ease, text-shadow 180ms ease;
+      }
+
+      .audio-mute:hover,
+      .audio-mute:focus-visible,
+      .audio-mute[data-muted="true"] {
+        color: #ffdce6;
+        text-shadow: 0 0 12px rgba(255, 159, 181, 0.72);
+      }
+
+      .make-a-wish {
+        position: fixed;
+        left: 50%;
+        bottom: 30px;
+        z-index: 8;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        width: min(440px, calc(100vw - 32px));
+        padding: 7px 8px 7px 18px;
+        overflow: hidden;
+        transform: translateX(-50%);
+        border: 1px solid rgba(255, 159, 181, 0.2);
+        border-radius: 999px;
+        background: rgba(9, 5, 13, 0.64);
+        box-shadow:
+          0 12px 38px rgba(0, 0, 0, 0.34),
+          0 0 22px rgba(255, 107, 144, 0.09),
+          inset 0 1px rgba(255, 255, 255, 0.035);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        pointer-events: auto;
+        transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+      }
+
+      .make-a-wish:focus-within {
+        border-color: rgba(255, 182, 200, 0.48);
+        background: rgba(12, 6, 16, 0.72);
+        box-shadow:
+          0 12px 40px rgba(0, 0, 0, 0.38),
+          0 0 28px rgba(255, 107, 144, 0.16),
+          inset 0 1px rgba(255, 255, 255, 0.045);
+      }
+
+      .wish-input {
+        min-width: 0;
+        flex: 1;
+        padding: 7px 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #fff3f8;
+        font: inherit;
+        font-size: 10px;
+        letter-spacing: 0.035em;
+        caret-color: #ffb6c8;
+      }
+
+      .wish-input::placeholder {
+        color: rgba(255, 232, 240, 0.34);
+        opacity: 1;
+      }
+
+      .wish-send {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        border: 0;
+        border-radius: 999px;
+        outline: 0;
+        background: transparent;
+        color: rgba(255, 218, 229, 0.7);
+        font: inherit;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        cursor: pointer;
+        text-shadow: 0 0 0 rgba(255, 159, 181, 0);
+        transition: color 180ms ease, text-shadow 180ms ease, background 180ms ease;
+      }
+
+      .wish-send:hover,
+      .wish-send:focus-visible {
+        color: #fff7fa;
+        background: rgba(255, 107, 144, 0.075);
+        text-shadow: 0 0 14px rgba(255, 159, 181, 0.8);
+      }
+
+      .make-a-wish.is-invalid {
+        animation: wish-nudge 260ms ease;
+        border-color: rgba(255, 107, 123, 0.68);
+      }
+
+      @keyframes wish-nudge {
+        25% { transform: translateX(calc(-50% - 3px)); }
+        75% { transform: translateX(calc(-50% + 3px)); }
+      }
+
+      @media (max-width: 640px) {
+        .hint {
+          display: none;
+        }
+
+        .audio-controls {
+          left: 12px;
+          bottom: 78px;
+          max-width: calc(100vw - 24px);
+        }
+
+        .make-a-wish {
+          bottom: 20px;
+          width: calc(100vw - 24px);
+          padding-left: 15px;
+        }
+      }
+      .loading {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        z-index: 10;
+        background: #06040b;
+        font-size: 10px;
+        letter-spacing: 0.3em;
+        color: rgba(255, 232, 240, 0.55);
+        pointer-events: none;
+        transition: opacity 700ms ease;
+      }
+
+      .loading.is-hidden { opacity: 0; }
+    /* Blue theme accents; interaction and status colors stay unchanged. */
+      h1 em { color: #a9ddff; }
+      .enable-camera { border-color: rgba(104, 189, 255, .5); background: rgba(26, 92, 180, .16); }
+      .enable-camera:hover { border-color: #a9ddff; background: rgba(26, 92, 180, .28); }
+      .wish-input { caret-color: #a9ddff; }
+    </style>
+  </head>
+  <body>
+    <div class="loading" id="loading">GROWING LIGHT</div>
+
+    <header class="brand">
+      <p class="eyebrow">NOËL · PARTICLES IN MOTION</p>
+      <h1>MERRY<br /><em>CHRISTMAS</em></h1>
+    </header>
+
+    <p class="hint">DRAG TO ORBIT · SCROLL TO EXPLORE</p>
+    <p class="index" id="particle-index">0K / 02</p>
+
+    <div class="audio-controls" id="audio-controls" aria-label="Background music controls">
+      <input
+        class="audio-volume"
+        id="audio-volume"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.5"
+        aria-label="Background music volume"
+      />
+      <button class="audio-mute" id="audio-mute" type="button" aria-pressed="false">
+        MUTE / UNMUTE
+      </button>
+    </div>
+    <video
+      class="gesture-video"
+      id="gesture-video"
+      autoplay
+      muted
+      playsinline
+      aria-hidden="true"
+    ></video>
+
+    <aside class="gesture-debug" id="gesture-debug" aria-live="polite">
+      <div class="gesture-debug__head">
+        <div>
+          <p class="gesture-debug__kicker">MediaPipe · Local</p>
+          <h2 class="gesture-debug__title">Hand Signal</h2>
+        </div>
+        <div class="camera-state" id="camera-state" data-state="off">
+          <span class="camera-state__dot" aria-hidden="true"></span>
+          <span id="camera-state-text">未开启</span>
+        </div>
+      </div>
+
+      <div class="gesture-debug__stats">
+        <div class="gesture-debug__stat">
+          <p class="gesture-debug__label">手掌数量</p>
+          <p class="gesture-debug__count" id="hand-count">0</p>
+        </div>
+        <div class="gesture-debug__stat">
+          <p class="gesture-debug__label">当前手势</p>
+          <p class="gesture-debug__gesture" id="gesture-value" data-gesture="NO_HAND">NO HAND</p>
+          <div class="gesture-debug__meter" aria-hidden="true">
+            <div class="gesture-debug__meter-fill" id="gesture-meter-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gesture-debug__distance">
+        <span>Y-DIST <strong id="gesture-distance">0.000</strong></span>
+        <span>THRESHOLD 0.150</span>
+      </div>
+
+      <button class="enable-camera" id="enable-camera" type="button">Enable Camera</button>
+      <p class="gesture-debug__message" id="gesture-message">Camera is off.</p>
+    </aside>
+
+    <form class="make-a-wish" id="wish-form" autocomplete="off">
+      <input
+        class="wish-input"
+        id="wish-input"
+        name="wish"
+        type="text"
+        maxlength="72"
+        placeholder="make a wish..."
+        aria-label="Make a wish"
+      />
+      <button class="wish-send" id="wish-send" type="submit">send</button>
+    </form>
+    <div class="vignette"></div>
+
+    <script>
+      window.addEventListener('error', (event) => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.textContent = `ERROR: ${event.message || '资源加载失败'}`;
+          loading.style.opacity = '1';
+          loading.style.letterSpacing = '0.08em';
+        }
+      });
+      window.addEventListener('unhandledrejection', (event) => {
+        const loading = document.getElementById('loading');
+        if (loading) {
+          loading.textContent = `ERROR: ${String(event.reason)}`;
+          loading.style.opacity = '1';
+          loading.style.letterSpacing = '0.08em';
+        }
+      });
+    </script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+      import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+      import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+      import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+      import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+      import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+
+      // === CONFIG ===
+
+      const CONFIG = Object.freeze({
+        tree: {
+          count: 32000,
+          height: 9.2,
+          radius: 3.55,
+          shellRatio: 0.68,
+          pointScale: 1.25,
+          opacity: 0.8,
+          explodeSpeed: 0.025,
+          explodeDistance: 1.9,
+          screenSpreadX: 9.2,
+          screenSpreadY: 6.4,
+          screenSpreadZ: 2.8,
+        },
+        heart: {
+          count: 8200,
+          edgeRatio: 0.2,
+          thickness: 0.26,
+          displayScale: 0.82,
+          size: 0.94,
+          centerYOffset: 0.92,
+          rotationSpeed: 0.24,
+          flareScale: 1.2,
+          flareDuration: 0.72,
+        },
+        snow: {
+          count: 2500,
+          width: 30,
+          depth: 22,
+          bottom: -7,
+          height: 19,
+          sizeScale: 0.9,
+          opacity: 0.58,
+        },
+        rings: {
+          count: 700,
+          radii: [1.05, 1.27, 1.5],
+          speeds: [0.055, -0.04, 0.03],
+        },
+        wish: {
+          orbCount: 960,
+          trailCount: 520,
+          trailRate: 150,
+          duration: 3.35,
+          maxActive: 3,
+          startDistance: 6.6,
+          startDrop: 1.65,
+          fireworkCount: 500,
+          fireworkDuration: 1.75,
+          fireworkSpeedMin: 1.15,
+          fireworkSpeedMax: 3.9,
+        },
+        gesture: {
+          threshold: 0.15,
+          maxHands: 1,
+          handMoveRangeX: 6.4,
+          handMoveRangeY: 4.4,
+          handFollowSpeed: 0.08,
+          visionModuleUrl: 'https://unpkg.com/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs',
+          wasmRoot: 'https://unpkg.com/@mediapipe/tasks-vision@0.10.14/wasm',
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        },
+        colors: {
+          background: '#030817',
+          blueBase: '#1746DC',
+          blueMiddle: '#159DF5',
+          blueTip: '#B8EEFF',
+          warmPink: '#FF6B90',
+          softPink: '#FF9FB5',
+          palePink: '#FFE8F0',
+          gold: '#FBC96B',
+          heart: '#DF0041',
+          heartHighlight: '#FF4D7E',
+          snow: '#FFFFFF',
+          snowPink: '#FFE8F0',
+          wishCore: '#FF6B90',
+          wishCoral: '#FF9AAE',
+          wishEdge: '#FFF7FB',
+        },
+        camera: {
+          position: [10.35, 7.95, 14.95],
+          target: [0, 0.25, 0],
+          fov: 42,
+          near: 0.1,
+          far: 80,
+        },
+        renderer: {
+          exposure: 0.88,
+        },
+        bloom: {
+          strength: 0.55,
+          radius: 0.5,
+          threshold: 0.58,
+        },
+      });
+
+      // === Background audio ===
+
+      function createBackgroundAudio() {
+        try {
+          const audio = new Audio('./bgm.mp3');
+          audio.loop = true;
+          audio.volume = 0.5;
+          audio.preload = 'auto';
+          audio.addEventListener('error', () => {
+            console.error('Unable to load background music: ./bgm.mp3');
+          }, { once: true });
+          audio.load();
+          return audio;
+        } catch (error) {
+          console.error('Unable to initialize background music.', error);
+          return null;
+        }
+      }
+
+      const backgroundAudio = createBackgroundAudio();
+
+      // Gesture-driven explosion state. Smoothing runs only in animate().
+      let currentExplode = 0.0;
+      let targetExplode = 0.0;
+      let currentHandX = 0.0;
+      let currentHandY = 0.0;
+      let targetHandX = 0.0;
+      let targetHandY = 0.0;
+
+      // === useHandGesture / vanilla-JS lifecycle adapter ===
+
+      function useHandGesture({ onState }) {
+        const video = document.getElementById('gesture-video');
+
+        if (!(video instanceof HTMLVideoElement)) {
+          throw new Error('The hidden gesture video element is missing.');
+        }
+
+        let handLandmarker = null;
+        let mediaStream = null;
+        let animationFrameId = 0;
+        let lastVideoTime = -1;
+        let isStarting = false;
+        let isStopped = false;
+        let state = {
+          cameraStatus: 'off',
+          palmCount: 0,
+          gesture: 'NO_HAND',
+          distance: 0,
+          threshold: CONFIG.gesture.threshold,
+          error: '',
+        };
+
+        function emit(nextState) {
+          state = { ...state, ...nextState };
+          onState({ ...state });
+        }
+
+        function releaseCamera() {
+          if (mediaStream !== null) {
+            mediaStream.getTracks().forEach((track) => track.stop());
+            mediaStream = null;
+          }
+
+          video.pause();
+          video.srcObject = null;
+        }
+
+        async function createLandmarker(vision, visionModule, delegate) {
+          return visionModule.HandLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: CONFIG.gesture.modelAssetPath,
+              delegate,
+            },
+            runningMode: 'VIDEO',
+            numHands: CONFIG.gesture.maxHands,
+            minHandDetectionConfidence: 0.55,
+            minHandPresenceConfidence: 0.55,
+            minTrackingConfidence: 0.5,
+          });
+        }
+
+        function predictWebcam() {
+          if (isStopped) {
+            return;
+          }
+
+          animationFrameId = requestAnimationFrame(predictWebcam);
+
+          if (
+            handLandmarker === null ||
+            video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+            video.currentTime === lastVideoTime
+          ) {
+            return;
+          }
+
+          lastVideoTime = video.currentTime;
+
+          try {
+            const results = handLandmarker.detectForVideo(video, performance.now());
+            const landmarks = results.landmarks?.[0];
+
+            if (!landmarks) {
+              targetExplode = 0.0;
+              targetHandX = 0.0;
+              targetHandY = 0.0;
+              emit({
+                palmCount: 0,
+                gesture: 'NO_HAND',
+                distance: 0,
+                error: '',
+              });
+              return;
+            }
+
+            const wrist = landmarks[0];
+            const indexFingertip = landmarks[8];
+
+            if (!wrist || !indexFingertip) {
+              targetExplode = 0.0;
+              targetHandX = 0.0;
+              targetHandY = 0.0;
+              emit({
+                palmCount: 0,
+                gesture: 'NO_HAND',
+                distance: 0,
+              });
+              return;
+            }
+
+            const middleFingerMcp = landmarks[9];
+            const palmCenterX = middleFingerMcp
+              ? (wrist.x + middleFingerMcp.x) * 0.5
+              : wrist.x;
+            const palmCenterY = middleFingerMcp
+              ? (wrist.y + middleFingerMcp.y) * 0.5
+              : wrist.y;
+            targetHandX = Math.max(-1, Math.min(1, (0.5 - palmCenterX) * 2));
+            targetHandY = Math.max(-1, Math.min(1, (0.5 - palmCenterY) * 2));
+
+            const distance = Math.abs(indexFingertip.y - wrist.y);
+            const gesture = distance > CONFIG.gesture.threshold ? 'OPEN' : 'CLOSED';
+            targetExplode = gesture === 'OPEN' ? 1.0 : 0.0;
+
+            emit({
+              palmCount: 1,
+              gesture,
+              distance,
+              error: '',
+            });
+          } catch (error) {
+            console.warn('Hand gesture detection skipped a frame.', error);
+          }
+        }
+
+        async function start() {
+          if (isStarting || handLandmarker !== null) {
+            return;
+          }
+
+          isStarting = true;
+          targetExplode = 0.0;
+
+          emit({
+            cameraStatus: 'loading',
+            palmCount: 0,
+            gesture: 'NO_HAND',
+            distance: 0,
+            error: '',
+          });
+
+          try {
+            if (!navigator.mediaDevices?.getUserMedia) {
+              throw new Error('Camera API is unavailable. Please use HTTPS or localhost.');
+            }
+
+            const [visionModule, nextStream] = await Promise.all([
+              import(CONFIG.gesture.visionModuleUrl),
+              navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                  facingMode: 'user',
+                  width: { ideal: 640 },
+                  height: { ideal: 480 },
+                  frameRate: { ideal: 30, max: 30 },
+                },
+              }),
+            ]);
+
+            if (isStopped) {
+              nextStream.getTracks().forEach((track) => track.stop());
+              return;
+            }
+
+            mediaStream = nextStream;
+            video.srcObject = mediaStream;
+            await video.play();
+
+            const vision = await visionModule.FilesetResolver.forVisionTasks(
+              CONFIG.gesture.wasmRoot,
+            );
+
+            let nextLandmarker;
+
+            try {
+              nextLandmarker = await createLandmarker(vision, visionModule, 'CPU');
+            } catch (cpuError) {
+              console.warn('CPU hand tracking unavailable; retrying with GPU.', cpuError);
+              nextLandmarker = await createLandmarker(vision, visionModule, 'GPU');
+            }
+
+            if (isStopped) {
+              nextLandmarker.close();
+              releaseCamera();
+              return;
+            }
+
+            handLandmarker = nextLandmarker;
+            emit({ cameraStatus: 'ready', error: '' });
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(predictWebcam);
+          } catch (error) {
+            releaseCamera();
+            targetExplode = 0.0;
+            const message = error instanceof Error ? error.message : String(error);
+            emit({
+              cameraStatus: 'off',
+              palmCount: 0,
+              gesture: 'NO_HAND',
+              distance: 0,
+              error: message,
+            });
+            throw error;
+          } finally {
+            isStarting = false;
+          }
+        }
+
+        function stop() {
+          isStopped = true;
+          targetExplode = 0.0;
+          cancelAnimationFrame(animationFrameId);
+          releaseCamera();
+
+          if (handLandmarker !== null) {
+            handLandmarker.close();
+            handLandmarker = null;
+          }
+        }
+
+        function getState() {
+          return { ...state };
+        }
+
+        return { start, stop, getState };
+      }
+      // === Gesture debug UI ===
+
+      function initializeGestureDebugUI() {
+        const cameraState = document.getElementById('camera-state');
+        const cameraStateText = document.getElementById('camera-state-text');
+        const handCount = document.getElementById('hand-count');
+        const gestureValue = document.getElementById('gesture-value');
+        const gestureDistance = document.getElementById('gesture-distance');
+        const gestureMeterFill = document.getElementById('gesture-meter-fill');
+        const gestureMessage = document.getElementById('gesture-message');
+        const enableCamera = document.getElementById('enable-camera');
+
+        if (
+          !cameraState ||
+          !cameraStateText ||
+          !handCount ||
+          !gestureValue ||
+          !gestureDistance ||
+          !gestureMeterFill ||
+          !gestureMessage ||
+          !(enableCamera instanceof HTMLButtonElement)
+        ) {
+          throw new Error('Gesture debug UI is incomplete.');
+        }
+
+        function render(nextState) {
+          const cameraLabels = {
+            off: '未开启',
+            loading: '加载模型中',
+            ready: '已开启',
+          };
+
+          cameraState.dataset.state = nextState.cameraStatus;
+          cameraStateText.textContent = cameraLabels[nextState.cameraStatus];
+          handCount.textContent = String(nextState.palmCount);
+          gestureValue.dataset.gesture = nextState.gesture;
+          gestureValue.textContent = nextState.gesture.replace('_', ' ');
+          gestureDistance.textContent = nextState.distance.toFixed(3);
+
+          const meterProgress = nextState.palmCount === 0
+            ? 0
+            : Math.min(nextState.distance / nextState.threshold, 1) * 100;
+          gestureMeterFill.style.width = `${meterProgress}%`;
+
+          if (nextState.error) {
+            gestureMessage.textContent = nextState.error;
+          } else if (nextState.cameraStatus === 'loading') {
+            gestureMessage.textContent = '正在请求摄像头权限并加载手部模型…';
+          } else if (nextState.cameraStatus === 'ready' && nextState.palmCount === 0) {
+            gestureMessage.textContent = '摄像头运行中，请将手掌放入画面。';
+          } else if (nextState.cameraStatus === 'ready') {
+            gestureMessage.textContent = 'MediaPipe 正在本地实时识别。';
+          } else {
+            gestureMessage.textContent = 'Camera is off.';
+          }
+        }
+
+        const handGesture = useHandGesture({ onState: render });
+
+        enableCamera.addEventListener('click', async () => {
+          enableCamera.disabled = true;
+          enableCamera.textContent = 'Loading Model...';
+
+          try {
+            await handGesture.start();
+            enableCamera.textContent = 'Camera Active';
+
+            if (backgroundAudio !== null) {
+              try {
+                await backgroundAudio.play();
+              } catch (audioError) {
+                console.error('Unable to play background music.', audioError);
+              }
+            }
+          } catch (error) {
+            console.error('Unable to start hand tracking.', error);
+            enableCamera.disabled = false;
+            enableCamera.textContent = 'Retry Camera';
+          }
+        });
+
+        window.addEventListener('beforeunload', handGesture.stop, { once: true });
+        render(handGesture.getState());
+      }
+
+      initializeGestureDebugUI();
+
+      // === Audio controls ===
+
+      function initializeAudioControls() {
+        const volume = document.getElementById('audio-volume');
+        const mute = document.getElementById('audio-mute');
+
+        if (!(volume instanceof HTMLInputElement) || !(mute instanceof HTMLButtonElement)) {
+          console.error('Audio controls are incomplete.');
+          return;
+        }
+
+        volume.addEventListener('input', () => {
+          try {
+            const nextVolume = Number(volume.value);
+            if (!Number.isFinite(nextVolume)) {
+              return;
+            }
+
+            if (backgroundAudio !== null) {
+              backgroundAudio.volume = Math.min(1, Math.max(0, nextVolume));
+            }
+          } catch (error) {
+            console.error('Unable to update background music volume.', error);
+          }
+        });
+
+        mute.addEventListener('click', () => {
+          try {
+            if (backgroundAudio === null) {
+              return;
+            }
+
+            backgroundAudio.muted = !backgroundAudio.muted;
+            mute.dataset.muted = String(backgroundAudio.muted);
+            mute.setAttribute('aria-pressed', String(backgroundAudio.muted));
+          } catch (error) {
+            console.error('Unable to toggle background music mute state.', error);
+          }
+        });
+      }
+
+      initializeAudioControls();
+
+      // === Utilities ===
+
+      function mulberry32(seed) {
+        let value = seed >>> 0;
+
+        return () => {
+          value += 0x6d2b79f5;
+          let result = value;
+          result = Math.imul(result ^ (result >>> 15), result | 1);
+          result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+          return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function makeColor(hex) {
+        return new THREE.Color(hex);
+      }
+
+      function setParticleColor(target, index, color, intensity = 1) {
+        const offset = index * 3;
+        target[offset] = color.r * intensity;
+        target[offset + 1] = color.g * intensity;
+        target[offset + 2] = color.b * intensity;
+      }
+
+      function makeGlowTexture() {
+        const size = 96;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          throw new Error('Canvas 2D context is unavailable.');
+        }
+
+        const gradient = context.createRadialGradient(
+          size * 0.5, size * 0.5, 0,
+          size * 0.5, size * 0.5, size * 0.5,
+        );
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.16, 'rgba(255,244,205,0.96)');
+        gradient.addColorStop(0.44, 'rgba(251,201,107,0.34)');
+        gradient.addColorStop(1, 'rgba(251,201,107,0)');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, size, size);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        return texture;
+      }
+
+      // === Renderer and scene ===
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        alpha: false,
+        depth: true,
+        stencil: false,
+        powerPreference: 'high-performance',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(CONFIG.colors.background, 1);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.NoToneMapping;
+      renderer.toneMappingExposure = CONFIG.renderer.exposure;
+      document.body.prepend(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.background = makeColor(CONFIG.colors.background);
+
+      const camera = new THREE.PerspectiveCamera(
+        CONFIG.camera.fov,
+        window.innerWidth / window.innerHeight,
+        CONFIG.camera.near,
+        CONFIG.camera.far,
+      );
+      camera.position.set(...CONFIG.camera.position);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(...CONFIG.camera.target);
+      controls.enablePan = false;
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.055;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.55;
+      controls.minDistance = 10.5;
+      controls.maxDistance = 25;
+      controls.minPolarAngle = Math.PI * 0.2;
+      controls.maxPolarAngle = Math.PI * 0.57;
+      controls.update();
+
+      // === Shaders ===
+      const treeVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        uniform float uSizeScale;
+        uniform float uExplode;
+        uniform float uExplodeDistance;
+        uniform vec3 uHandOffset;
+        uniform vec3 uBurstRight;
+        uniform vec3 uBurstUp;
+        uniform vec3 uBurstForward;
+        uniform vec3 uScreenSpread;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aPhase;
+        attribute float aGlow;
+
+        varying vec3 vColor;
+        varying float vGlow;
+        varying float vTwinkle;
+
+        float hash31(vec3 p) {
+          p = fract(p * 0.1031);
+          p += dot(p, p.yzx + 33.33);
+          return fract((p.x + p.y) * p.z);
+        }
+
+        float noise3(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+
+          float n000 = hash31(i + vec3(0.0, 0.0, 0.0));
+          float n100 = hash31(i + vec3(1.0, 0.0, 0.0));
+          float n010 = hash31(i + vec3(0.0, 1.0, 0.0));
+          float n110 = hash31(i + vec3(1.0, 1.0, 0.0));
+          float n001 = hash31(i + vec3(0.0, 0.0, 1.0));
+          float n101 = hash31(i + vec3(1.0, 0.0, 1.0));
+          float n011 = hash31(i + vec3(0.0, 1.0, 1.0));
+          float n111 = hash31(i + vec3(1.0, 1.0, 1.0));
+
+          float nx00 = mix(n000, n100, f.x);
+          float nx10 = mix(n010, n110, f.x);
+          float nx01 = mix(n001, n101, f.x);
+          float nx11 = mix(n011, n111, f.x);
+          float nxy0 = mix(nx00, nx10, f.y);
+          float nxy1 = mix(nx01, nx11, f.y);
+          return mix(nxy0, nxy1, f.z);
+        }
+
+        void main() {
+          vec3 transformed = position;
+          float organicNoise = noise3(
+            transformed * 0.34 + vec3(0.0, uTime * 0.16, uTime * 0.08)
+          );
+          float breath = sin(uTime * 1.12 + aPhase + transformed.y * 0.36);
+
+          transformed.y += sin(uTime * 0.44 + aPhase * 1.7) * 0.055;
+          transformed.y += (organicNoise - 0.5) * 0.14;
+          transformed.xz *= 1.0 + breath * 0.018;
+          transformed.x += sin(uTime * 0.37 + aPhase) * 0.016;
+          transformed.z += cos(uTime * 0.31 + aPhase * 1.3) * 0.016;
+
+          vec3 outward = normalize(position + vec3(0.0001));
+          vec3 scatter = vec3(
+            sin(aPhase * 1.71 + organicNoise * 3.0),
+            cos(aPhase * 1.33) * 0.72,
+            cos(aPhase * 2.11 + organicNoise * 2.0)
+          ) * 0.46;
+          float dispersion = 0.68 + 0.54 * abs(
+            sin(aPhase * 2.7 + organicNoise * 6.28318)
+          );
+          outward = normalize(outward + scatter);
+          transformed += outward * uExplode * uExplodeDistance * dispersion;
+          float burstX = sin(aPhase * 12.9898 + organicNoise * 78.233);
+          float burstY = cos(aPhase * 39.346 + organicNoise * 11.135);
+          float burstZ = sin(aPhase * 73.156 + organicNoise * 52.235);
+          vec3 burstField = uBurstRight * (burstX * uScreenSpread.x)
+            + uBurstUp * (burstY * uScreenSpread.y)
+            + uBurstForward * (burstZ * uScreenSpread.z);
+          transformed += burstField * uExplode;
+          transformed += uHandOffset * uExplode;
+
+          vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          float twinkle = 0.74 + 0.26 * sin(
+            uTime * 1.75 + aPhase * 2.4 + organicNoise * 6.28318
+          );
+          gl_PointSize = aSize * uSizeScale * uPixelRatio * (
+            74.0 / max(1.0, -mvPosition.z)
+          ) * (1.0 + uExplode * 0.55);
+          gl_PointSize = clamp(gl_PointSize, 0.7, 20.0);
+
+          vColor = aColor;
+          vGlow = aGlow;
+          vTwinkle = twinkle;
+        }
+      `;
+
+      const heartVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        uniform float uSizeScale;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aPhase;
+        attribute float aGlow;
+
+        varying vec3 vColor;
+        varying float vGlow;
+        varying float vTwinkle;
+
+        void main() {
+          vec3 transformed = position;
+          float microPulse = sin(uTime * 4.5 + aPhase) * 0.012;
+          transformed.xy *= 1.0 + microPulse;
+          transformed.z += sin(uTime * 3.1 + aPhase * 1.7) * 0.018;
+
+          vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          float twinkle = 0.82 + 0.18 * sin(uTime * 2.6 + aPhase * 3.2);
+          gl_PointSize = aSize * uSizeScale * uPixelRatio * (
+            68.0 / max(1.0, -mvPosition.z)
+          );
+          gl_PointSize = clamp(gl_PointSize, 0.8, 11.0);
+
+          vColor = aColor;
+          vGlow = aGlow;
+          vTwinkle = twinkle;
+        }
+      `;
+
+      const snowVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        uniform float uSizeScale;
+        uniform float uBottom;
+        uniform float uHeight;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aSpeed;
+        attribute float aPhase;
+
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          float wrappedY = mod(
+            position.y - uTime * aSpeed - uBottom,
+            uHeight
+          ) + uBottom;
+
+          vec3 transformed = vec3(
+            position.x + sin(uTime * 0.44 + aPhase) * 0.18,
+            wrappedY,
+            position.z + cos(uTime * 0.34 + aPhase * 1.3) * 0.14
+          );
+
+          vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          gl_PointSize = aSize * uSizeScale * uPixelRatio * (
+            58.0 / max(1.0, -mvPosition.z)
+          );
+          gl_PointSize = clamp(gl_PointSize, 1.0, 7.0);
+
+          vColor = aColor;
+          vAlpha = 0.42 + 0.28 * sin(uTime * 0.8 + aPhase);
+        }
+      `;
+
+      const softParticleFragmentShader = `
+        uniform float uOpacity;
+        uniform float uExplode;
+
+        varying vec3 vColor;
+        varying float vGlow;
+        varying float vTwinkle;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.09, 0.5, distanceToCenter);
+          float halo = pow(max(0.0, 1.0 - distanceToCenter * 1.82), 1.7);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 3.2), 2.4);
+          float alpha = clamp(
+            (softEdge * 0.21 + core * 0.17) * vGlow * uOpacity,
+            0.0,
+            0.46
+          ) * mix(1.0, 0.56, uExplode);
+
+          vec3 color = vColor * (0.9 + halo * 0.38 + core * 0.72);
+          color += vec3(0.55, 0.85, 1.0) * core * 0.08;
+
+          gl_FragColor = vec4(color * vTwinkle, alpha);
+        }
+      `;
+
+      const heartFragmentShader = `
+        uniform float uHeartFlare;
+
+        varying vec3 vColor;
+        varying float vGlow;
+        varying float vTwinkle;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.1, 0.5, distanceToCenter);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 3.3), 2.2);
+          float alpha = clamp(
+            (softEdge * 0.28 + core * 0.26) * vGlow,
+            0.0,
+            0.64
+          );
+
+          vec3 color = vColor * (1.04 + core * 0.9);
+          color += vec3(1.0, 0.58, 0.72) * core * 0.12;
+          color *= 1.0 + uHeartFlare * 3.2;
+          color += vec3(1.0, 0.46, 0.6) * core * uHeartFlare * 0.48;
+          alpha *= 1.0 + uHeartFlare * 0.28;
+
+          gl_FragColor = vec4(color * vTwinkle, alpha);
+        }
+      `;
+
+      const snowFragmentShader = `
+        uniform float uOpacity;
+
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.05, 0.5, distanceToCenter);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 3.0), 2.0);
+          float alpha = clamp((softEdge * 0.18 + core * 0.14) * vAlpha * uOpacity, 0.0, 0.32);
+
+          gl_FragColor = vec4(vColor, alpha * vAlpha);
+        }
+      `;
+
+      // === Tree particles ===
+
+      function createTreeParticles() {
+        const { count, height, radius, shellRatio } = CONFIG.tree;
+        const random = mulberry32(0xdec2026);
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const phases = new Float32Array(count);
+        const glows = new Float32Array(count);
+
+        const warmPink = makeColor(CONFIG.colors.warmPink);
+        const softPink = makeColor(CONFIG.colors.softPink);
+        const palePink = makeColor(CONFIG.colors.palePink);
+        const gold = makeColor(CONFIG.colors.gold);
+
+        // Reuse scratch colors; height maps bottom royal blue to an icy tip.
+        const blueBase = makeColor(CONFIG.colors.blueBase);
+        const blueMiddle = makeColor(CONFIG.colors.blueMiddle);
+        const blueTip = makeColor(CONFIG.colors.blueTip);
+        const gradientColor = new THREE.Color();
+
+        for (let index = 0; index < count; index += 1) {
+          const offset = index * 3;
+          const heightNorm = 1 - Math.sqrt(1 - random());
+          const heightFactor = 1 - heightNorm;
+          const theta = random() * Math.PI * 2 + Math.sin(heightNorm * 21) * 0.09;
+
+          const radialNorm =
+            random() < shellRatio
+              ? 0.82 + random() * 0.18
+              : Math.pow(random(), 0.82) * 0.78;
+
+          const coneRadius =
+            radius * Math.pow(Math.max(0, 1 - heightNorm), 1.08);
+          const branchRipple =
+            0.955 + Math.sin(theta * 9 + heightNorm * 27) * 0.045;
+          const pointRadius = coneRadius * radialNorm * branchRipple;
+          const jitter = (random() - 0.5) * 0.055;
+
+          positions[offset] = Math.cos(theta) * pointRadius + jitter;
+          positions[offset + 1] =
+            heightNorm * height - height * 0.5 + (random() - 0.5) * 0.075;
+          positions[offset + 2] = Math.sin(theta) * pointRadius - jitter;
+
+          let color;
+          let accent = false;
+
+          if (radialNorm < 0.75) {
+            color = random() < 0.58 ? warmPink : softPink;
+          } else {
+            const roll = random();
+            const paleCutoff = 0.25 * heightFactor;
+            const goldCutoff = paleCutoff + 0.15 * heightFactor;
+
+            if (roll < paleCutoff) {
+              color = palePink;
+              accent = true;
+            } else if (roll < goldCutoff) {
+              color = gold;
+              accent = true;
+            } else {
+              color = random() < 0.5 ? warmPink : softPink;
+            }
+          }
+
+          // Keep the original random sequence, geometry and sparkle distribution.
+          const t = Math.max(0, Math.min(1, heightNorm));
+          if (t < 0.55) {
+            const u = t / 0.55;
+            gradientColor.copy(blueBase).lerp(blueMiddle, u * u * (3 - 2 * u));
+          } else {
+            const u = (t - 0.55) / 0.45;
+            gradientColor.copy(blueMiddle).lerp(blueTip, u * u * (3 - 2 * u));
+          }
+          if (accent) gradientColor.lerp(blueTip, 0.28);
+          setParticleColor(colors, index, gradientColor, accent ? 1.12 : 1);
+          sizes[index] = accent
+            ? 1.0 + random() * 0.95
+            : 0.62 + random() * 0.78;
+          phases[index] = random() * Math.PI * 2;
+          glows[index] = accent
+            ? 1.08 + random() * 0.4
+            : 0.72 + random() * 0.42;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+        geometry.setAttribute('aGlow', new THREE.BufferAttribute(glows, 1));
+        geometry.computeBoundingSphere();
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uSizeScale: { value: CONFIG.tree.pointScale },
+          uOpacity: { value: CONFIG.tree.opacity },
+          uExplode: { value: 0 },
+          uExplodeDistance: { value: CONFIG.tree.explodeDistance },
+          uHandOffset: { value: new THREE.Vector3() },
+          uBurstRight: { value: new THREE.Vector3(1, 0, 0) },
+          uBurstUp: { value: new THREE.Vector3(0, 1, 0) },
+          uBurstForward: { value: new THREE.Vector3(0, 0, 1) },
+          uScreenSpread: {
+            value: new THREE.Vector3(
+              CONFIG.tree.screenSpreadX,
+              CONFIG.tree.screenSpreadY,
+              CONFIG.tree.screenSpreadZ,
+            ),
+          },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: treeVertexShader,
+          fragmentShader: softParticleFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 1;
+
+        return { points, uniforms, geometry, material };
+      }
+
+      const tree = createTreeParticles();
+      const particleMaterial = tree.material;
+      scene.add(tree.points);
+
+      // === Heart particles ===
+
+      function heartInside(x, y) {
+        const base = x * x + y * y - 1;
+        return base * base * base - x * x * y * y * y <= 0;
+      }
+
+      function createHeartParticles() {
+        const { count, edgeRatio, thickness } = CONFIG.heart;
+        const random = mulberry32(0x1f4a7);
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const phases = new Float32Array(count);
+        const glows = new Float32Array(count);
+
+        const heartPink = makeColor(CONFIG.colors.heart);
+        const heartHighlight = makeColor(CONFIG.colors.heartHighlight);
+        const gold = makeColor(CONFIG.colors.gold);
+        const edgeCount = Math.floor(count * edgeRatio);
+
+        for (let index = 0; index < count; index += 1) {
+          const offset = index * 3;
+          const isEdge = index >= count - edgeCount;
+          let x;
+          let y;
+
+          if (isEdge) {
+            const t = random() * Math.PI * 2;
+            const sinT = Math.sin(t);
+            const cosT = Math.cos(t);
+            const rawX = 16 * sinT * sinT * sinT;
+            const rawY =
+              13 * cosT -
+              5 * Math.cos(2 * t) -
+              2 * Math.cos(3 * t) -
+              Math.cos(4 * t);
+
+            x = (rawX / 14.4) * (0.985 + (random() - 0.5) * 0.04);
+            y = ((rawY + 2.2) / 14.2) * (0.985 + (random() - 0.5) * 0.04);
+          } else {
+            let attempts = 0;
+
+            do {
+              x = (random() * 2 - 1) * 1.24;
+              y = (random() * 2 - 1) * 1.12 + 0.04;
+              attempts += 1;
+            } while (!heartInside(x, y) && attempts < 32);
+          }
+
+          positions[offset] = x;
+          positions[offset + 1] = y;
+          const depthScale = isEdge ? 1 : 0.72 + random() * 0.28;
+          positions[offset + 2] = (random() - 0.5) * thickness * depthScale;
+
+          let color;
+          let glow;
+
+          if (isEdge) {
+            const roll = random();
+            color = roll < 0.46 ? gold : heartHighlight;
+            glow = 0.78 + random() * 0.24;
+          } else {
+            const roll = random();
+            color = roll < 0.78 ? heartPink : heartHighlight;
+            glow = 0.82 + random() * 0.32;
+          }
+
+          setParticleColor(colors, index, color, isEdge ? 1.18 : 1.12);
+          sizes[index] = isEdge
+            ? 0.36 + random() * 0.52
+            : 0.48 + random() * 0.62;
+          phases[index] = random() * Math.PI * 2;
+          glows[index] = glow;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+        geometry.setAttribute('aGlow', new THREE.BufferAttribute(glows, 1));
+        geometry.computeBoundingSphere();
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uSizeScale: { value: CONFIG.heart.size },
+          uHeartFlare: { value: 0 },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: heartVertexShader,
+          fragmentShader: heartFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 2;
+
+        const group = new THREE.Group();
+        group.position.set(
+          0,
+          CONFIG.tree.height * 0.5 + CONFIG.heart.centerYOffset,
+          0,
+        );
+        group.add(points);
+
+        return { group, uniforms, geometry, material };
+      }
+
+      const heart = createHeartParticles();
+      scene.add(heart.group);
+
+      // === Heart celebration fireworks ===
+
+      const heartFireworkVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aAlpha;
+        attribute float aPhase;
+
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          float twinkle = 0.76 + 0.24 * sin(uTime * 8.5 + aPhase * 4.2);
+          gl_PointSize = aSize * uPixelRatio * (
+            58.0 / max(1.0, -mvPosition.z)
+          );
+          gl_PointSize = clamp(gl_PointSize, 1.0, 12.0);
+
+          vColor = aColor;
+          vAlpha = aAlpha * twinkle;
+        }
+      `;
+
+      const heartFireworkFragmentShader = `
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.06, 0.5, distanceToCenter);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 3.1), 2.3);
+          float alpha = clamp(softEdge * 0.32 + core * 0.3, 0.0, 0.7) * vAlpha;
+
+          vec3 color = vColor * (1.08 + core * 1.25);
+          color += vec3(1.0, 0.88, 0.58) * core * 0.24;
+
+          gl_FragColor = vec4(color, alpha);
+        }
+      `;
+
+      function createHeartFireworkPool() {
+        const count = CONFIG.wish.fireworkCount;
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const alphas = new Float32Array(count);
+        const phases = new Float32Array(count);
+        const lives = new Float32Array(count);
+        const maxLives = new Float32Array(count);
+        const velocities = new Float32Array(count * 3);
+
+        const geometry = new THREE.BufferGeometry();
+        const positionAttribute = new THREE.BufferAttribute(positions, 3);
+        const colorAttribute = new THREE.BufferAttribute(colors, 3);
+        const sizeAttribute = new THREE.BufferAttribute(sizes, 1);
+        const alphaAttribute = new THREE.BufferAttribute(alphas, 1);
+        const phaseAttribute = new THREE.BufferAttribute(phases, 1);
+
+        positionAttribute.setUsage(THREE.DynamicDrawUsage);
+        colorAttribute.setUsage(THREE.DynamicDrawUsage);
+        sizeAttribute.setUsage(THREE.DynamicDrawUsage);
+        alphaAttribute.setUsage(THREE.DynamicDrawUsage);
+
+        geometry.setAttribute('position', positionAttribute);
+        geometry.setAttribute('aColor', colorAttribute);
+        geometry.setAttribute('aSize', sizeAttribute);
+        geometry.setAttribute('aAlpha', alphaAttribute);
+        geometry.setAttribute('aPhase', phaseAttribute);
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: heartFireworkVertexShader,
+          fragmentShader: heartFireworkFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 5;
+        points.visible = false;
+        scene.add(points);
+
+        return {
+          points,
+          geometry,
+          material,
+          uniforms,
+          positions,
+          velocities,
+          lives,
+          maxLives,
+          alphas,
+          colors,
+          sizes,
+          phases,
+          positionAttribute,
+          colorAttribute,
+          sizeAttribute,
+          alphaAttribute,
+          active: false,
+        };
+      }
+
+      let heartFlareStartedAt = -Infinity;
+      const heartFireworkRandom = mulberry32(0xf1ae2026);
+      const heartFirework = createHeartFireworkPool();
+
+      function getHeartFlareEnergy(elapsedTime) {
+        const age = elapsedTime - heartFlareStartedAt;
+        if (age < 0 || age > CONFIG.heart.flareDuration) {
+          return 0;
+        }
+
+        const attack = 0.055;
+        if (age < attack) {
+          return cubicOut(age / attack);
+        }
+
+        return 1 - quinticInOut(
+          (age - attack) / (CONFIG.heart.flareDuration - attack),
+        );
+      }
+
+      function triggerHeartFirework(elapsedTime) {
+        const count = CONFIG.wish.fireworkCount;
+        const gold = makeColor(CONFIG.colors.gold);
+        const center = heart.group.position;
+        const fireworkRight = new THREE.Vector3();
+        const fireworkUp = new THREE.Vector3();
+        const fireworkForward = new THREE.Vector3();
+
+        fireworkRight.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+        fireworkUp.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+        fireworkForward.setFromMatrixColumn(camera.matrixWorld, 2).normalize();
+
+        heartFlareStartedAt = elapsedTime;
+        heartFirework.active = true;
+        heartFirework.points.visible = true;
+        heartFirework.uniforms.uTime.value = elapsedTime;
+
+        for (let index = 0; index < count; index += 1) {
+          const offset = index * 3;
+          const theta = heartFireworkRandom() * Math.PI * 2;
+          const isHaloParticle = heartFireworkRandom() < 0.68;
+          const speed = CONFIG.wish.fireworkSpeedMin + heartFireworkRandom() * (
+            CONFIG.wish.fireworkSpeedMax - CONFIG.wish.fireworkSpeedMin
+          );
+          const originJitter = heartFireworkRandom() * 0.045;
+          let directionX;
+          let directionY;
+          let directionZ;
+
+          if (isHaloParticle) {
+            const depthOffset = (heartFireworkRandom() - 0.5) * 0.12;
+            directionX = fireworkRight.x * Math.cos(theta) +
+              fireworkUp.x * Math.sin(theta) +
+              fireworkForward.x * depthOffset;
+            directionY = fireworkRight.y * Math.cos(theta) +
+              fireworkUp.y * Math.sin(theta) +
+              fireworkForward.y * depthOffset;
+            directionZ = fireworkRight.z * Math.cos(theta) +
+              fireworkUp.z * Math.sin(theta) +
+              fireworkForward.z * depthOffset;
+          } else {
+            const vertical = heartFireworkRandom() * 2 - 1;
+            const ring = Math.sqrt(Math.max(0, 1 - vertical * vertical));
+            directionX = Math.cos(theta) * ring;
+            directionY = vertical;
+            directionZ = Math.sin(theta) * ring;
+          }
+
+          const directionLength = Math.hypot(
+            directionX,
+            directionY,
+            directionZ,
+          );
+          directionX /= directionLength;
+          directionY /= directionLength;
+          directionZ /= directionLength;
+
+          heartFirework.positions[offset] =
+            center.x + directionX * originJitter;
+          heartFirework.positions[offset + 1] =
+            center.y + directionY * originJitter;
+          heartFirework.positions[offset + 2] =
+            center.z + directionZ * originJitter;
+
+          heartFirework.velocities[offset] = directionX * speed;
+          heartFirework.velocities[offset + 1] = directionY * speed;
+          heartFirework.velocities[offset + 2] = directionZ * speed;
+
+          setParticleColor(
+            heartFirework.colors,
+            index,
+            gold,
+            0.92 + heartFireworkRandom() * 0.4,
+          );
+          heartFirework.sizes[index] = 0.58 + heartFireworkRandom() * 0.86;
+          heartFirework.phases[index] = heartFireworkRandom() * Math.PI * 2;
+          heartFirework.alphas[index] = 1;
+
+          const life = CONFIG.wish.fireworkDuration * (
+            0.72 + heartFireworkRandom() * 0.28
+          );
+          heartFirework.lives[index] = life;
+          heartFirework.maxLives[index] = life;
+        }
+
+        heartFirework.positionAttribute.needsUpdate = true;
+        heartFirework.colorAttribute.needsUpdate = true;
+        heartFirework.sizeAttribute.needsUpdate = true;
+        heartFirework.alphaAttribute.needsUpdate = true;
+      }
+
+      function updateHeartFirework(delta, elapsedTime) {
+        if (!heartFirework.active) {
+          return;
+        }
+
+        heartFirework.uniforms.uTime.value = elapsedTime;
+        heartFirework.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+        let hasLiveParticles = false;
+
+        for (let index = 0; index < CONFIG.wish.fireworkCount; index += 1) {
+          if (heartFirework.lives[index] <= 0) {
+            heartFirework.alphas[index] = 0;
+            continue;
+          }
+
+          hasLiveParticles = true;
+          heartFirework.lives[index] = Math.max(
+            0,
+            heartFirework.lives[index] - delta,
+          );
+
+          const offset = index * 3;
+          heartFirework.positions[offset] +=
+            heartFirework.velocities[offset] * delta;
+          heartFirework.positions[offset + 1] +=
+            heartFirework.velocities[offset + 1] * delta;
+          heartFirework.positions[offset + 2] +=
+            heartFirework.velocities[offset + 2] * delta;
+
+          const lifeRatio =
+            heartFirework.lives[index] / heartFirework.maxLives[index];
+          heartFirework.alphas[index] = Math.pow(lifeRatio, 1.35);
+        }
+
+        heartFirework.positionAttribute.needsUpdate = true;
+        heartFirework.alphaAttribute.needsUpdate = true;
+
+        if (!hasLiveParticles) {
+          heartFirework.active = false;
+          heartFirework.points.visible = false;
+        }
+      }
+
+      // === Snow particles ===
+
+      function createSnowParticles() {
+        const { count, width, depth, bottom, height } = CONFIG.snow;
+        const random = mulberry32(0xc0ffee);
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const speeds = new Float32Array(count);
+        const phases = new Float32Array(count);
+
+        const white = makeColor(CONFIG.colors.snow);
+        const palePink = makeColor(CONFIG.colors.snowPink);
+
+        for (let index = 0; index < count; index += 1) {
+          const offset = index * 3;
+          positions[offset] = (random() - 0.5) * width;
+          positions[offset + 1] = bottom + random() * height;
+          positions[offset + 2] = (random() - 0.5) * depth;
+
+          const color = random() < 0.72 ? white : palePink;
+          setParticleColor(colors, index, color, 0.78 + random() * 0.22);
+          sizes[index] = 0.65 + random() * 2.9;
+          speeds[index] = 0.28 + random() * 1.35;
+          phases[index] = random() * Math.PI * 2;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
+        geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uSizeScale: { value: CONFIG.snow.sizeScale },
+          uOpacity: { value: CONFIG.snow.opacity },
+          uBottom: { value: bottom },
+          uHeight: { value: height },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: snowVertexShader,
+          fragmentShader: snowFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 0;
+
+        return { points, uniforms, geometry, material };
+      }
+
+      const snow = createSnowParticles();
+      scene.add(snow.points);
+
+      // === Bottom golden rings ===
+
+      function createGoldenRings() {
+        const random = mulberry32(0x60d3a7);
+        const glowTexture = makeGlowTexture();
+        const baseY = -CONFIG.tree.height * 0.5 - 0.08;
+        const rings = [];
+
+        CONFIG.rings.radii.forEach((radiusScale, ringIndex) => {
+          const positions = new Float32Array(CONFIG.rings.count * 3);
+          const radius = CONFIG.tree.radius * radiusScale;
+
+          for (let index = 0; index < CONFIG.rings.count; index += 1) {
+            const offset = index * 3;
+            const angle = random() * Math.PI * 2;
+            const radialJitter = (random() - 0.5) * 0.05;
+            const finalRadius = radius + radialJitter;
+
+            positions[offset] = Math.cos(angle) * finalRadius;
+            positions[offset + 1] =
+              baseY + ringIndex * 0.02 + (random() - 0.5) * 0.028;
+            positions[offset + 2] = Math.sin(angle) * finalRadius;
+          }
+
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute(
+            'position',
+            new THREE.BufferAttribute(positions, 3),
+          );
+
+          const material = new THREE.PointsMaterial({
+            color: CONFIG.colors.blueMiddle,
+            size: 0.052 - ringIndex * 0.004,
+            map: glowTexture,
+            transparent: true,
+            opacity: 0.44 - ringIndex * 0.055,
+            alphaTest: 0.015,
+            depthWrite: false,
+            depthTest: true,
+            blending: THREE.AdditiveBlending,
+            sizeAttenuation: true,
+          });
+
+          const points = new THREE.Points(geometry, material);
+          points.rotation.y = random() * Math.PI * 2;
+          points.renderOrder = 1;
+          scene.add(points);
+
+          rings.push({
+            points,
+            speed: CONFIG.rings.speeds[ringIndex],
+            geometry,
+            material,
+          });
+        });
+
+        return { rings, glowTexture };
+      }
+
+      const goldenRings = createGoldenRings();
+
+      // === Make a Wish ===
+
+      const wishOrbVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+        uniform float uBurst;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aPhase;
+
+        varying vec3 vColor;
+        varying float vTwinkle;
+
+        void main() {
+          vec3 transformed = position;
+          float breathe = sin(uTime * 3.2 + aPhase) * 0.075;
+          transformed *= 1.0 + breathe;
+
+          vec3 localDirection = normalize(position + vec3(0.0001));
+          transformed += localDirection * sin(uTime * 2.1 + aPhase * 2.7) * 0.025;
+          transformed += localDirection * uBurst * (0.7 + 0.35 * sin(aPhase * 3.1));
+
+          vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          gl_PointSize = aSize * uPixelRatio * (
+            48.0 / max(1.0, -mvPosition.z)
+          ) * (1.0 + uBurst * 0.22);
+          gl_PointSize = clamp(gl_PointSize, 1.0, 12.0);
+
+          vColor = aColor;
+          vTwinkle = 0.8 + 0.2 * sin(uTime * 4.6 + aPhase * 3.8);
+        }
+      `;
+
+      const wishOrbFragmentShader = `
+        uniform float uOpacity;
+
+        varying vec3 vColor;
+        varying float vTwinkle;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.08, 0.5, distanceToCenter);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 3.0), 2.2);
+          float alpha = clamp(softEdge * 0.34 + core * 0.28, 0.0, 0.66);
+          alpha *= uOpacity;
+
+          vec3 color = vColor * (0.95 + core * 0.82);
+          color += vec3(1.0, 0.72, 0.8) * core * 0.22;
+
+          gl_FragColor = vec4(color * vTwinkle, alpha);
+        }
+      `;
+
+      const wishTrailVertexShader = `
+        uniform float uTime;
+        uniform float uPixelRatio;
+
+        attribute vec3 aColor;
+        attribute float aSize;
+        attribute float aAlpha;
+
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+
+          float twinkle = 0.82 + 0.18 * sin(uTime * 5.4 + position.x * 2.0 + position.y);
+          gl_PointSize = aSize * uPixelRatio * (
+            38.0 / max(1.0, -mvPosition.z)
+          );
+          gl_PointSize = clamp(gl_PointSize, 0.8, 7.0);
+
+          vColor = aColor;
+          vAlpha = aAlpha * twinkle;
+        }
+      `;
+
+      const wishTrailFragmentShader = `
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec2 pointUv = gl_PointCoord - 0.5;
+          float distanceToCenter = length(pointUv);
+
+          if (distanceToCenter > 0.5) {
+            discard;
+          }
+
+          float softEdge = 1.0 - smoothstep(0.05, 0.5, distanceToCenter);
+          float core = pow(max(0.0, 1.0 - distanceToCenter * 2.8), 2.0);
+          float alpha = (softEdge * 0.2 + core * 0.24) * vAlpha;
+
+          gl_FragColor = vec4(vColor * (1.0 + core * 0.8), alpha);
+        }
+      `;
+
+      const wishFlashTexture = makeGlowTexture();
+      const activeWishes = [];
+      let wishSequence = 0;
+
+      function clamp01(value) {
+        return Math.min(1, Math.max(0, value));
+      }
+
+      function cubicOut(value) {
+        const inverse = 1 - clamp01(value);
+        return 1 - inverse * inverse * inverse;
+      }
+
+      function quinticInOut(value) {
+        const t = clamp01(value);
+        return t < 0.5
+          ? 16 * t * t * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 5) / 2;
+      }
+
+      function sampleCubicBezier(out, p0, p1, p2, p3, value) {
+        const t = clamp01(value);
+        const inverse = 1 - t;
+        const a = inverse * inverse * inverse;
+        const b = 3 * inverse * inverse * t;
+        const c = 3 * inverse * t * t;
+        const d = t * t * t;
+
+        return out.set(0, 0, 0)
+          .addScaledVector(p0, a)
+          .addScaledVector(p1, b)
+          .addScaledVector(p2, c)
+          .addScaledVector(p3, d);
+      }
+
+      function createWishTrail() {
+        const { trailCount } = CONFIG.wish;
+        const positions = new Float32Array(trailCount * 3);
+        const colors = new Float32Array(trailCount * 3);
+        const sizes = new Float32Array(trailCount);
+        const alphas = new Float32Array(trailCount);
+        const lives = new Float32Array(trailCount);
+        const maxLives = new Float32Array(trailCount);
+        const velocities = new Float32Array(trailCount * 3);
+
+        const geometry = new THREE.BufferGeometry();
+        const positionAttribute = new THREE.BufferAttribute(positions, 3);
+        const colorAttribute = new THREE.BufferAttribute(colors, 3);
+        const sizeAttribute = new THREE.BufferAttribute(sizes, 1);
+        const alphaAttribute = new THREE.BufferAttribute(alphas, 1);
+
+        positionAttribute.setUsage(THREE.DynamicDrawUsage);
+        colorAttribute.setUsage(THREE.DynamicDrawUsage);
+        sizeAttribute.setUsage(THREE.DynamicDrawUsage);
+        alphaAttribute.setUsage(THREE.DynamicDrawUsage);
+
+        geometry.setAttribute('position', positionAttribute);
+        geometry.setAttribute('aColor', colorAttribute);
+        geometry.setAttribute('aSize', sizeAttribute);
+        geometry.setAttribute('aAlpha', alphaAttribute);
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: wishTrailVertexShader,
+          fragmentShader: wishTrailFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 3;
+        scene.add(points);
+
+        return {
+          points,
+          geometry,
+          material,
+          uniforms,
+          positions,
+          colors,
+          sizes,
+          alphas,
+          lives,
+          maxLives,
+          velocities,
+          positionAttribute,
+          colorAttribute,
+          sizeAttribute,
+          alphaAttribute,
+          cursor: 0,
+        };
+      }
+
+      function createWishOrb() {
+        const { orbCount } = CONFIG.wish;
+        const random = mulberry32(0x77a51 + wishSequence * 977);
+        const positions = new Float32Array(orbCount * 3);
+        const colors = new Float32Array(orbCount * 3);
+        const sizes = new Float32Array(orbCount);
+        const phases = new Float32Array(orbCount);
+        const coreColor = makeColor(CONFIG.colors.wishCore);
+        const coralColor = makeColor(CONFIG.colors.wishCoral);
+        const edgeColor = makeColor(CONFIG.colors.wishEdge);
+
+        for (let index = 0; index < orbCount; index += 1) {
+          const offset = index * 3;
+          const vertical = random() * 2 - 1;
+          const theta = random() * Math.PI * 2;
+          const ring = Math.sqrt(1 - vertical * vertical);
+          const radius = Math.pow(random(), 0.42) * 0.54;
+          const radialNorm = radius / 0.54;
+          const colorRoll = random();
+
+          positions[offset] = Math.cos(theta) * ring * radius;
+          positions[offset + 1] = vertical * radius;
+          positions[offset + 2] = Math.sin(theta) * ring * radius;
+
+          let color = coreColor;
+          if (radialNorm > 0.68 || colorRoll > 0.82) {
+            color = edgeColor;
+          } else if (radialNorm > 0.34 || colorRoll > 0.48) {
+            color = coralColor;
+          }
+
+          setParticleColor(colors, index, color, 0.92 + random() * 0.22);
+          sizes[index] = 0.46 + random() * 0.72;
+          phases[index] = random() * Math.PI * 2;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+
+        const uniforms = {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uBurst: { value: 0 },
+          uOpacity: { value: 1 },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: wishOrbVertexShader,
+          fragmentShader: wishOrbFragmentShader,
+          transparent: true,
+          depthWrite: false,
+          depthTest: true,
+          blending: THREE.AdditiveBlending,
+        });
+
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        points.renderOrder = 4;
+        scene.add(points);
+
+        return { points, geometry, material, uniforms };
+      }
+
+      function createWish() {
+        wishSequence += 1;
+        const random = mulberry32(0x51a7e + wishSequence * 1597);
+        const cameraDirection = new THREE.Vector3();
+        const cameraUpDirection = new THREE.Vector3();
+        const cameraRightDirection = new THREE.Vector3();
+
+        camera.getWorldDirection(cameraDirection);
+        cameraUpDirection.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+        cameraRightDirection.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+
+        const start = camera.position.clone()
+          .addScaledVector(cameraDirection, CONFIG.wish.startDistance)
+          .addScaledVector(cameraUpDirection, -CONFIG.wish.startDrop)
+          .addScaledVector(cameraRightDirection, 0.18);
+        const target = heart.group.position.clone();
+        const controlA = start.clone()
+          .addScaledVector(cameraUpDirection, 2.35)
+          .addScaledVector(cameraRightDirection, 1.8);
+        const controlB = target.clone()
+          .addScaledVector(cameraUpDirection, 2.9)
+          .addScaledVector(cameraRightDirection, -1.45);
+
+        const orb = createWishOrb();
+        const trail = createWishTrail();
+        const flashMaterial = new THREE.SpriteMaterial({
+          map: wishFlashTexture,
+          color: CONFIG.colors.wishCoral,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          depthTest: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const flash = new THREE.Sprite(flashMaterial);
+        flash.renderOrder = 3;
+        scene.add(flash);
+
+        orb.points.position.copy(start);
+        flash.position.copy(start);
+        flash.scale.setScalar(0.95);
+
+        return {
+          id: wishSequence,
+          random,
+          orb,
+          trail,
+          flash,
+          start,
+          target,
+          controlA,
+          controlB,
+          pathPosition: start.clone(),
+          phase: 'flight',
+          age: 0,
+          progress: 0,
+          burstAge: 0,
+          trailAccumulator: 0,
+          finishedAge: 0,
+        };
+      }
+
+      function emitWishTrail(wish) {
+        const { trail, random } = wish;
+        const index = trail.cursor;
+        const offset = index * 3;
+        const source = wish.orb.points.position;
+        const colorRoll = random();
+        const coreColor = makeColor(CONFIG.colors.wishCore);
+        const coralColor = makeColor(CONFIG.colors.wishCoral);
+        const edgeColor = makeColor(CONFIG.colors.wishEdge);
+        const color = colorRoll > 0.84
+          ? edgeColor
+          : colorRoll > 0.52
+            ? coralColor
+            : coreColor;
+
+        trail.positions[offset] = source.x + (random() - 0.5) * 0.24;
+        trail.positions[offset + 1] = source.y + (random() - 0.5) * 0.24;
+        trail.positions[offset + 2] = source.z + (random() - 0.5) * 0.24;
+
+        setParticleColor(trail.colors, index, color, 0.92 + random() * 0.24);
+        trail.sizes[index] = 0.34 + random() * 0.62;
+        trail.alphas[index] = 0.72 + random() * 0.28;
+
+        const life = 0.62 + random() * 0.78;
+        trail.lives[index] = life;
+        trail.maxLives[index] = life;
+        trail.velocities[offset] = (random() - 0.5) * 0.12;
+        trail.velocities[offset + 1] = -0.12 - random() * 0.18;
+        trail.velocities[offset + 2] = (random() - 0.5) * 0.12;
+
+        trail.positionAttribute.needsUpdate = true;
+        trail.colorAttribute.needsUpdate = true;
+        trail.sizeAttribute.needsUpdate = true;
+        trail.alphaAttribute.needsUpdate = true;
+        trail.cursor = (index + 1) % CONFIG.wish.trailCount;
+      }
+
+      function updateWishTrail(wish, delta) {
+        const { trail } = wish;
+
+        for (let index = 0; index < CONFIG.wish.trailCount; index += 1) {
+          if (trail.lives[index] <= 0) {
+            trail.alphas[index] = 0;
+            continue;
+          }
+
+          trail.lives[index] = Math.max(0, trail.lives[index] - delta);
+          if (trail.lives[index] === 0) {
+            trail.alphas[index] = 0;
+            continue;
+          }
+
+          const offset = index * 3;
+          trail.positions[offset] += trail.velocities[offset] * delta;
+          trail.positions[offset + 1] += trail.velocities[offset + 1] * delta;
+          trail.positions[offset + 2] += trail.velocities[offset + 2] * delta;
+          trail.velocities[offset + 1] -= delta * 0.035;
+
+          const lifeRatio = trail.lives[index] / trail.maxLives[index];
+          trail.alphas[index] = Math.pow(lifeRatio, 1.55);
+        }
+
+        trail.positionAttribute.needsUpdate = true;
+        trail.alphaAttribute.needsUpdate = true;
+      }
+
+
+      function disposeWish(wish) {
+        scene.remove(wish.orb.points);
+        wish.orb.geometry.dispose();
+        wish.orb.material.dispose();
+
+        scene.remove(wish.trail.points);
+        wish.trail.geometry.dispose();
+        wish.trail.material.dispose();
+
+        scene.remove(wish.flash);
+        wish.flash.material.dispose();
+      }
+
+      function updateWishSystem(delta, elapsedTime) {
+        for (let index = activeWishes.length - 1; index >= 0; index -= 1) {
+          const wish = activeWishes[index];
+          wish.orb.uniforms.uTime.value = elapsedTime;
+          wish.orb.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+          wish.trail.uniforms.uTime.value = elapsedTime;
+          wish.trail.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+          updateWishTrail(wish, delta);
+
+          if (wish.phase === 'flight') {
+            wish.age += delta;
+            wish.progress = clamp01(wish.age / CONFIG.wish.duration);
+            wish.target.copy(heart.group.position);
+            const eased = quinticInOut(wish.progress);
+            sampleCubicBezier(
+              wish.pathPosition,
+              wish.start,
+              wish.controlA,
+              wish.controlB,
+              wish.target,
+              eased,
+            );
+
+            wish.orb.points.position.copy(wish.pathPosition);
+            wish.orb.points.rotation.y = elapsedTime * 1.65 + wish.id;
+            wish.orb.points.rotation.x = Math.sin(elapsedTime * 0.8 + wish.id) * 0.2;
+
+            const pulse = 1 + Math.sin(elapsedTime * 3.4 + wish.id) * 0.075;
+            wish.orb.points.scale.setScalar(pulse);
+            wish.flash.position.copy(wish.pathPosition);
+            wish.flash.material.opacity = 0.12 + Math.sin(elapsedTime * 3.2) * 0.025;
+            wish.flash.scale.setScalar(0.82 + Math.sin(elapsedTime * 2.5) * 0.08);
+
+            wish.trailAccumulator += delta * CONFIG.wish.trailRate;
+            while (wish.trailAccumulator >= 1) {
+              emitWishTrail(wish);
+              wish.trailAccumulator -= 1;
+            }
+
+            if (wish.progress >= 1) {
+              wish.phase = 'finished';
+              wish.finishedAge = 0;
+              wish.orb.points.position.copy(wish.target);
+              wish.orb.points.visible = false;
+              wish.flash.visible = false;
+              triggerHeartFirework(elapsedTime);
+              setWishStatus('wish received · the heart blooms in gold', 'received');
+            }
+          } else {
+            wish.finishedAge += delta;
+            if (wish.finishedAge >= 2.15) {
+              disposeWish(wish);
+              activeWishes.splice(index, 1);
+            }
+          }
+        }
+      }
+
+      function setWishStatus(message, state) {
+        const status = document.getElementById('wish-status');
+        if (!status) {
+          return;
+        }
+
+        status.textContent = message;
+        status.dataset.state = state;
+      }
+
+      function spawnWish() {
+        if (activeWishes.length >= CONFIG.wish.maxActive) {
+          setWishStatus('the tree is still carrying your last wishes', 'error');
+          return false;
+        }
+
+        const wish = createWish();
+        activeWishes.push(wish);
+        return true;
+      }
+
+      function initializeWishUI() {
+        const form = document.getElementById('wish-form');
+        const input = document.getElementById('wish-input');
+
+        if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
+          return;
+        }
+
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const wishText = input.value.trim();
+
+          if (wishText.length === 0) {
+            form.classList.remove('is-invalid');
+            void form.offsetWidth;
+            form.classList.add('is-invalid');
+            setWishStatus('a wish needs a little light to carry', 'error');
+            input.focus();
+            return;
+          }
+
+          form.classList.remove('is-invalid');
+          if (!spawnWish()) {
+            return;
+          }
+
+          input.value = '';
+          input.focus();
+          setWishStatus('your wish is rising toward the stars', 'sent');
+        });
+
+        input.addEventListener('input', () => {
+          form.classList.remove('is-invalid');
+          if (input.value.trim().length > 0) {
+            setWishStatus('one wish at a time · the tree is listening', 'idle');
+          }
+        });
+      }
+
+      initializeWishUI();
+
+
+      // === Post-processing ===
+
+      const acesToneMappingPass = new ShaderPass(
+        {
+          name: 'AcesToneMappingShader',
+          uniforms: {
+            tDiffuse: { value: null },
+            exposure: { value: CONFIG.renderer.exposure },
+          },
+          vertexShader: `
+            varying vec2 vUv;
+
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D tDiffuse;
+            uniform float exposure;
+            varying vec2 vUv;
+
+            vec3 acesFilm(vec3 x) {
+              const float a = 2.51;
+              const float b = 0.03;
+              const float c = 2.43;
+              const float d = 0.59;
+              const float e = 0.14;
+              return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+            }
+
+            void main() {
+              vec4 texel = texture2D(tDiffuse, vUv);
+              vec3 mapped = acesFilm(texel.rgb * exposure);
+              gl_FragColor = vec4(mapped, texel.a);
+            }
+          `,
+        },
+        'tDiffuse',
+      );
+
+      const composer = new EffectComposer(renderer);
+      composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      composer.setSize(window.innerWidth, window.innerHeight);
+      composer.addPass(new RenderPass(scene, camera));
+
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        CONFIG.bloom.strength,
+        CONFIG.bloom.radius,
+        CONFIG.bloom.threshold,
+      );
+      composer.addPass(bloomPass);
+      composer.addPass(acesToneMappingPass);
+      composer.addPass(new OutputPass());
+
+      // === Animation ===
+
+      const clock = new THREE.Clock();
+      const pointerTarget = new THREE.Vector3();
+      const pointerCurrent = new THREE.Vector3();
+      const cameraRight = new THREE.Vector3();
+      const cameraUp = new THREE.Vector3();
+      const cameraForward = new THREE.Vector3();
+      const handWorldOffset = new THREE.Vector3();
+      const heartBaseY =
+        CONFIG.tree.height * 0.5 + CONFIG.heart.centerYOffset;
+
+      function getHeartbeat(elapsedTime) {
+        const phase = (elapsedTime * 1.18) % 1;
+        const firstBeat = Math.exp(-Math.pow((phase - 0.09) * 15, 2));
+        const secondBeat =
+          0.58 * Math.exp(-Math.pow((phase - 0.25) * 20, 2));
+        return Math.max(firstBeat, secondBeat);
+      }
+
+      function animate() {
+        const delta = Math.min(clock.getDelta(), 0.05);
+        const elapsedTime = clock.elapsedTime;
+
+        currentExplode += (targetExplode - currentExplode) * CONFIG.tree.explodeSpeed;
+        currentHandX += (targetHandX - currentHandX) * CONFIG.gesture.handFollowSpeed;
+        currentHandY += (targetHandY - currentHandY) * CONFIG.gesture.handFollowSpeed;
+        particleMaterial.uniforms.uExplode.value = currentExplode;
+
+        tree.uniforms.uTime.value = elapsedTime;
+        tree.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+        heart.uniforms.uTime.value = elapsedTime;
+        heart.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+        snow.uniforms.uTime.value = elapsedTime;
+        snow.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+
+        const heartbeat = getHeartbeat(elapsedTime);
+        heart.group.position.y =
+          heartBaseY + Math.sin(elapsedTime * 1.05) * 0.022;
+        heart.group.rotation.y = elapsedTime * CONFIG.heart.rotationSpeed;
+
+        goldenRings.rings.forEach((ring) => {
+          ring.points.rotation.y += ring.speed * delta;
+        });
+
+        updateWishSystem(delta, elapsedTime);
+        const heartFlare = getHeartFlareEnergy(elapsedTime);
+        heart.uniforms.uHeartFlare.value = heartFlare;
+        heart.group.scale.setScalar(
+          (CONFIG.heart.displayScale + heartbeat * 0.055) * (
+            1 + heartFlare * (CONFIG.heart.flareScale - 1)
+          ),
+        );
+        updateHeartFirework(delta, elapsedTime);
+
+        pointerTarget.set(
+          controls.object.position.x * 0.0015,
+          controls.object.position.y * 0.001,
+          0,
+        );
+        pointerCurrent.lerp(pointerTarget, 1 - Math.exp(-delta * 2.5));
+        tree.points.position.x = pointerCurrent.x;
+        tree.points.position.y = pointerCurrent.y;
+
+        controls.update();
+        camera.updateMatrixWorld();
+        cameraRight.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+        cameraUp.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+        cameraForward.setFromMatrixColumn(camera.matrixWorld, 2).normalize();
+        particleMaterial.uniforms.uBurstRight.value.copy(cameraRight);
+        particleMaterial.uniforms.uBurstUp.value.copy(cameraUp);
+        particleMaterial.uniforms.uBurstForward.value.copy(cameraForward);
+        handWorldOffset.set(0, 0, 0)
+          .addScaledVector(cameraRight, currentHandX * CONFIG.gesture.handMoveRangeX)
+          .addScaledVector(cameraUp, currentHandY * CONFIG.gesture.handMoveRangeY);
+        particleMaterial.uniforms.uHandOffset.value.copy(handWorldOffset);
+
+        composer.render();
+      }
+
+      renderer.setAnimationLoop(animate);
+
+      // === Responsive ===
+
+      function handleResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setPixelRatio(pixelRatio);
+        renderer.setSize(width, height);
+        composer.setPixelRatio(pixelRatio);
+        composer.setSize(width, height);
+        bloomPass.setSize(width, height);
+      }
+
+      window.addEventListener('resize', handleResize);
+
+      const totalParticles =
+        CONFIG.tree.count +
+        CONFIG.heart.count +
+        CONFIG.snow.count +
+        CONFIG.rings.count * CONFIG.rings.radii.length;
+      const indexElement = document.getElementById('particle-index');
+
+      if (indexElement) {
+        indexElement.textContent = `${Math.round(totalParticles / 1000)}K / 02`;
+      }
+
+      requestAnimationFrame(() => {
+        document.getElementById('loading')?.classList.add('is-hidden');
+      });
+    
+</script>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
