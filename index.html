@@ -300,7 +300,12 @@
         opacity: 0;
         pointer-events: none;
       }
-      .audio-controls {
+      .holiday-greeting {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: .035em;
+        color: #c3e7ff;
+        white-space: nowrap;
         position: fixed;
         left: clamp(22px, 4.5vw, 72px);
         bottom: clamp(20px, 3.5vw, 44px);
@@ -317,69 +322,6 @@
           inset 0 1px rgba(255, 255, 255, 0.025);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
-      }
-
-      .audio-volume {
-        width: 92px;
-        height: 12px;
-        margin: 0;
-        appearance: none;
-        background: transparent;
-        cursor: pointer;
-        accent-color: #ff9fb5;
-      }
-
-      .audio-volume::-webkit-slider-runnable-track {
-        height: 1px;
-        border-radius: 999px;
-        background: rgba(255, 232, 240, 0.22);
-      }
-
-      .audio-volume::-webkit-slider-thumb {
-        width: 8px;
-        height: 8px;
-        margin-top: -3.5px;
-        appearance: none;
-        border-radius: 50%;
-        background: #ffb6c8;
-        box-shadow: 0 0 9px rgba(255, 159, 181, 0.72);
-      }
-
-      .audio-volume::-moz-range-track {
-        height: 1px;
-        border-radius: 999px;
-        background: rgba(255, 232, 240, 0.22);
-      }
-
-      .audio-volume::-moz-range-thumb {
-        width: 8px;
-        height: 8px;
-        border: 0;
-        border-radius: 50%;
-        background: #ffb6c8;
-        box-shadow: 0 0 9px rgba(255, 159, 181, 0.72);
-      }
-
-      .audio-mute {
-        padding: 2px 0;
-        border: 0;
-        outline: 0;
-        background: transparent;
-        color: rgba(255, 218, 229, 0.64);
-        font: inherit;
-        font-size: 8px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: color 180ms ease, text-shadow 180ms ease;
-      }
-
-      .audio-mute:hover,
-      .audio-mute:focus-visible,
-      .audio-mute[data-muted="true"] {
-        color: #ffdce6;
-        text-shadow: 0 0 12px rgba(255, 159, 181, 0.72);
       }
 
       .make-a-wish {
@@ -475,7 +417,7 @@
           display: none;
         }
 
-        .audio-controls {
+        .holiday-greeting {
           left: 12px;
           bottom: 78px;
           max-width: calc(100vw - 24px);
@@ -538,21 +480,7 @@
     <p class="hint">DRAG TO ORBIT · SCROLL TO EXPLORE</p>
     <p class="index" id="particle-index">0K / 02</p>
 
-    <div class="audio-controls" id="audio-controls" aria-label="Background music controls">
-      <input
-        class="audio-volume"
-        id="audio-volume"
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.5"
-        aria-label="Background music volume"
-      />
-      <button class="audio-mute" id="audio-mute" type="button" aria-pressed="false">
-        MUTE / UNMUTE
-      </button>
-    </div>
+    <div class="holiday-greeting">QB Merry Christmas</div>
     <video
       class="gesture-video"
       id="gesture-video"
@@ -1089,49 +1017,6 @@
       }
 
       initializeGestureDebugUI();
-
-      // === Audio controls ===
-
-      function initializeAudioControls() {
-        const volume = document.getElementById('audio-volume');
-        const mute = document.getElementById('audio-mute');
-
-        if (!(volume instanceof HTMLInputElement) || !(mute instanceof HTMLButtonElement)) {
-          console.error('Audio controls are incomplete.');
-          return;
-        }
-
-        volume.addEventListener('input', () => {
-          try {
-            const nextVolume = Number(volume.value);
-            if (!Number.isFinite(nextVolume)) {
-              return;
-            }
-
-            if (backgroundAudio !== null) {
-              backgroundAudio.volume = Math.min(1, Math.max(0, nextVolume));
-            }
-          } catch (error) {
-            console.error('Unable to update background music volume.', error);
-          }
-        });
-
-        mute.addEventListener('click', () => {
-          try {
-            if (backgroundAudio === null) {
-              return;
-            }
-
-            backgroundAudio.muted = !backgroundAudio.muted;
-            mute.dataset.muted = String(backgroundAudio.muted);
-            mute.setAttribute('aria-pressed', String(backgroundAudio.muted));
-          } catch (error) {
-            console.error('Unable to toggle background music mute state.', error);
-          }
-        });
-      }
-
-      initializeAudioControls();
 
       // === Utilities ===
 
